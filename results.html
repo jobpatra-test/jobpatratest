@@ -140,15 +140,16 @@ window.addEventListener("load", () => {
   const q = getQuery();
 
   // Combine all states arrays defined in data.js
-  // ✅ Fetch data directly from your Google Sheet
+  // ✅ Fetch data from your Google Sheet
 async function fetchCompaniesFromSheet() {
   const sheetID = "1di6woxdzeB5PJhK5QhgiDg798Ic5VFpEXrqN4qPUclY";
-  const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json`;
+  const sheetName = "Sheet1"; // change if your tab name differs
+  const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json&sheet=${sheetName}`;
 
   try {
     const res = await fetch(url);
     const text = await res.text();
-    const json = JSON.parse(text.substring(47).slice(0, -2));
+    const json = JSON.parse(text.substr(47).slice(0, -2));
 
     const cols = json.table.cols.map(c => c.label.trim().toLowerCase());
     const rows = json.table.rows.map(r => {
@@ -167,6 +168,20 @@ async function fetchCompaniesFromSheet() {
       };
     });
 
+    // replace blank or invalid values
+    rows.forEach(r => {
+      Object.keys(r).forEach(k => {
+        if (!r[k] || r[k].toString().trim() === "") r[k] = "N/A";
+      });
+    });
+
+    console.log("✅ Loaded", rows.length, "companies from Google Sheets");
+    return rows;
+  } catch (err) {
+    console.error("⚠️ Failed to load Google Sheet:", err);
+    return [];
+  }
+}
     console.log("✅ Loaded", rows.length, "companies from Google Sheets");
     return rows;
   } catch (err) {
