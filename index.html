@@ -245,10 +245,22 @@
       border-radius: 6px;
       margin-bottom: 10px;
     }
-  </style>
-</head>  Some companies post openings only on their official career pages. Visit company websites directly if jobs aren’t listed elsewhere.
+  
+</style>
+</head>
+<body>
+  <header>💼 JobPatra</header>
+
+  <div class="container">
+    <div class="note">
+      Some companies post openings only on their official career pages.
+      Visit company websites directly if jobs aren’t listed elsewhere.
     </div>
 
+    <!-- friendly message for sheet load error -->
+    <div id="dataError" class="error" style="display:none;">
+      ⚠️ Unable to load job data. Please refresh or check your internet connection.
+    </div>
     <h2>Search Career Opportunities</h2>
 
     <label for="sector">Select Sector <small style="font-weight:600;color:#b71c1c;">(required)</small></label>
