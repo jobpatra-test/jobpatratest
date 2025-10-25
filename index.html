@@ -341,6 +341,128 @@
   <a href="contact.html">Contact</a>
   <br>© 2025 JobPatra. All rights reserved.
   </footer>
+  <script>
+/* ---------- CONFIG ---------- */
+const SHEET_ID = "1di6woxdzeB5PJhK5QhgiDg798Ic5VFpEXrqN4qPUclY"; // your sheet
+const SHEET_NAME = "Sheet1";
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+const LS_KEY = "jobpatra_data_v1";
+
+/* ---------- Load data ---------- */
+async function loadSheetData(forceReload = false) {
+  if (!forceReload) {
+    const cache = localStorage.getItem(LS_KEY);
+    if (cache) return JSON.parse(cache);
+  }
+  const res = await fetch(SHEET_URL);
+  const text = await res.text();
+  const json = JSON.parse(text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1));
+  const cols = json.table.cols.map(c => (c.label || "").trim().toLowerCase());
+  const data = json.table.rows.map(r => {
+    const row = {};
+    cols.forEach((c, i) => row[c] = r.c[i]?.v || "");
+    return row;
+  });
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+  return data;
+}
+
+/* ---------- Dropdown Logic ---------- */
+async function setupDropdowns() {
+  const data = await loadSheetData();
+  const sectorSel = document.getElementById("sector");
+  const stateSel = document.getElementById("state");
+  const citySel = document.getElementById("city");
+
+  // Reset and disable
+  sectorSel.innerHTML = '<option value="">-- Select Sector (required) --</option>';
+  stateSel.innerHTML = '<option value="">Select State</option>';
+  citySel.innerHTML = '<option value="">Select City</option>';
+  stateSel.disabled = true;
+  citySel.disabled = true;
+
+  // Populate sectors
+  const sectors = [...new Set(data.map(d => d.sector).filter(Boolean))].sort();
+  sectors.forEach(sec => {
+    const opt = document.createElement("option");
+    opt.value = sec;
+    opt.textContent = sec;
+    sectorSel.appendChild(opt);
+  });
+
+  // When sector changes
+  sectorSel.addEventListener("change", () => {
+    const selSec = sectorSel.value;
+    stateSel.innerHTML = '<option value="">Select State</option>';
+    citySel.innerHTML = '<option value="">Select City</option>';
+    citySel.disabled = true;
+
+    if (!selSec) {
+      stateSel.disabled = true;
+      return;
+    }
+
+    const states = [...new Set(data.filter(d => d.sector === selSec).map(d => d.state).filter(Boolean))].sort();
+    states.forEach(st => {
+      const o = document.createElement("option");
+      o.value = st;
+      o.textContent = st;
+      stateSel.appendChild(o);
+    });
+    stateSel.disabled = false;
+  });
+
+  // When state changes
+  stateSel.addEventListener("change", () => {
+    const selSec = sectorSel.value;
+    const selSt = stateSel.value;
+    citySel.innerHTML = '<option value="">Select City</option>';
+    const cities = [...new Set(data.filter(d => d.sector === selSec && d.state === selSt).map(d => d.city).filter(Boolean))].sort();
+    cities.forEach(ct => {
+      const o = document.createElement("option");
+      o.value = ct;
+      o.textContent = ct;
+      citySel.appendChild(o);
+    });
+    citySel.disabled = cities.length === 0;
+  });
+}
+
+/* ---------- Search & Ads ---------- */
+document.addEventListener("DOMContentLoaded", async () => {
+  await setupDropdowns();
+
+  const err = document.getElementById('formError');
+  document.getElementById('searchBtn').addEventListener('click', () => {
+    const s = document.getElementById('sector').value;
+    const st = document.getElementById('state').value;
+    const c = document.getElementById('city').value;
+    if (!s) {
+      err.style.display = 'block';
+      return;
+    }
+    err.style.display = 'none';
+    window.location.href = `results.html?sector=${encodeURIComponent(s)}&state=${encodeURIComponent(st)}&city=${encodeURIComponent(c)}`;
+  });
+
+  // Rotate ad
+  const ads = [
+    "https://via.placeholder.com/468x60.png?text=Ad+1",
+    "https://via.placeholder.com/468x60.png?text=Ad+2",
+    "https://via.placeholder.com/468x60.png?text=Ad+3"
+  ];
+  let i = 0;
+  setInterval(() => {
+    i = (i + 1) % ads.length;
+    const img = document.getElementById('indexAd');
+    img.style.opacity = 0;
+    setTimeout(() => {
+      img.src = ads[i];
+      img.style.opacity = 1;
+    }, 300);
+  }, 10000);
+});
+</script>
               
 </body>
 </html>
