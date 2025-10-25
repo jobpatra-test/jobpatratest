@@ -85,7 +85,42 @@
   </div>
 </div>
 
-<script src="data.js"></script>
+<script>
+async function loadSheetData() {
+  const sheetID = "1di6woxdzeB5PJhK5QhgiDg798Ic5VFpEXrqN4qPUclY"; // your sheet
+  const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json`;
+
+  try {
+    const res = await fetch(url);
+    const text = await res.text();
+    const json = JSON.parse(text.substring(47).slice(0, -2));
+
+    const cols = json.table.cols.map(c => c.label.trim().toLowerCase());
+    const rows = json.table.rows.map(r => {
+      const obj = {};
+      cols.forEach((c, i) => {
+        obj[c] = r.c[i]?.v || "N/A";
+      });
+      return {
+        company: obj.company || "N/A",
+        sector: obj.sector || "N/A",
+        state: obj.state || "N/A",
+        city: obj.city || "N/A",
+        roles: (obj.roles || "N/A").split(/[,;]+/).map(s => s.trim()),
+        linkedin: obj.linkedin || "#",
+        career: obj.website || "#"
+      };
+    });
+
+    window.allCompanies = rows;
+    console.log("✅ Loaded", rows.length, "companies from Google Sheets");
+  } catch (e) {
+    console.error("⚠️ Error loading sheet:", e);
+    window.allCompanies = [];
+  }
+}
+loadSheetData();
+</script>
 <script>
 window.addEventListener("load", () => {
   const resultsDiv = document.getElementById("results");
@@ -105,14 +140,50 @@ window.addEventListener("load", () => {
   const q = getQuery();
 
   // Combine all states arrays defined in data.js
-  const allCompanies = [
-    ...(window.andhraPradeshCompanies || []),
-    ...(window.karnatakaCompanies || []),
-    ...(window.maharashtraCompanies || []),
-    ...(window.tamilNaduCompanies || []),
-    ...(window.delhiCompanies || [])
-    // if you add more arrays in data.js just append them here. Structure preserved.
-  ];
+  // ✅ Fetch data directly from your Google Sheet
+async function fetchCompaniesFromSheet() {
+  const sheetID = "1di6woxdzeB5PJhK5QhgiDg798Ic5VFpEXrqN4qPUclY";
+  const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?tqx=out:json`;
+
+  try {
+    const res = await fetch(url);
+    const text = await res.text();
+    const json = JSON.parse(text.substring(47).slice(0, -2));
+
+    const cols = json.table.cols.map(c => c.label.trim().toLowerCase());
+    const rows = json.table.rows.map(r => {
+      const obj = {};
+      cols.forEach((c, i) => {
+        obj[c] = r.c[i]?.v || "N/A";
+      });
+      return {
+        company: obj.company || "N/A",
+        sector: obj.sector || "N/A",
+        state: obj.state || "N/A",
+        city: obj.city || "N/A",
+        roles: (obj.roles || "N/A").split(/[,;]+/).map(s => s.trim()),
+        linkedin: obj.linkedin || "#",
+        career: obj.website || "#"
+      };
+    });
+
+    console.log("✅ Loaded", rows.length, "companies from Google Sheets");
+    return rows;
+  } catch (err) {
+    console.error("⚠️ Failed to load Google Sheet:", err);
+    return [];
+  }
+}
+
+// Instead of local arrays, we load from the sheet
+let allCompanies = [];
+await fetchCompaniesFromSheet().then(data => {
+  allCompanies = data;
+});
+  // Cache data for faster reloads
+if (!localStorage.getItem("jobpatra_data")) {
+   ...
+}
   for (const key in window)
   if (key.endsWith("Companies")) allCompanies.push(...(window[key] || []));
 // ✅ Cache data for faster reloads
